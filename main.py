@@ -37,6 +37,7 @@ def Traveling_point(track, peaks_x, peaks_y, frame_rate):
     n = len(track)
     T = (n-1)/frame_rate # s
     dt = 1/frame_rate
+    fps = 30
 
     t = np.linspace(0, T, n)
     k = 10 # Using the k first freqs
@@ -68,25 +69,26 @@ def Traveling_point(track, peaks_x, peaks_y, frame_rate):
     #r = np.zeros((n,2))
     #for i in range(n):
 
-    print("test2")
 
     def update_data(i):
-        i = 500*i
+        print(i)
+        i = int(frame_rate/fps*i) # Makes sure the time is correct
         ax.clear()
         ax.set_ylim([-1.5,1.5])
 
         step = 80
-        reachback = step*n_dots
+        reachback = step*n_dots # the farthest backwards reaching trailing dot
 
         tall = len(s[(i-reachback):i:step])
         ax.scatter(t[(i-reachback):i:step],s[(i-reachback):i:step],color=rgba_colors[:tall])
+        ax.set_title("t={lok:.2f} s".format(lok=t[i]))
 
     ani = animation.FuncAnimation(fig=fig, func=update_data , frames=None)
-    plt.show()
-    exit("lasd")
+
     Writer = animation.writers['ffmpeg']
-    writer = Writer(fps=15, metadata=dict(artist="Me"), bitrate=1800)
+    writer = Writer(fps=fps, metadata=dict(artist="Me"), bitrate=1800)
     ani.save('traveling_point.mp4', writer=writer)
+    exit("eddge")
 
 if __name__ == "__main__":
     #import inspect
