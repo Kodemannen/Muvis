@@ -41,6 +41,7 @@ def Traveling_point(track, peaks_x, peaks_y, frame_rate):
     t = np.linspace(0, T, n)
     k = 10 # Using the k first freqs
 
+
     freqs = peaks_x[:k] / 1000   # Hz
     print(freqs)
     amps  = peaks_y[:k]
@@ -50,9 +51,16 @@ def Traveling_point(track, peaks_x, peaks_y, frame_rate):
     a = amps[0]
     s = np.sin(w*t)
 
-    for i in range(n):
-
     fig, ax = plt.subplots()
+
+      ##################
+     # Trailing dots: #
+    ##################
+    n_dots = 10
+    rgba_colors = np.zeros((10, 4))
+    rgba_colors[:,0] = 1.0
+    alphas = np.linspace(0.1, 1, 10)
+    rgba_colors[:,3] = alphas # 4th columns are the alphas
 
     # Some numerical integration method:
     #v0 = np.array([1,0])
@@ -60,22 +68,17 @@ def Traveling_point(track, peaks_x, peaks_y, frame_rate):
     #r = np.zeros((n,2))
     #for i in range(n):
 
-    lambda_ = 0.99
-    fade = np.ones(n)*0.1
-    with_fade = s.copy()
     def update_data(i):
-
-        i = 3000*i
+        i = 50000*i
         ax.clear()
-        ax.set_ylim([-1,1])
-        ax.scatter(t[:i],with_fade[:i],color="black")
-        with_fade[:i]*=
+        ax.set_ylim([-1.5,1.5])
 
+        tall = len(s[(i-10):i])
+        ax.scatter(t[(i-10):i],s[(i-10):i],color=rgba_colors[:tall])
 
     ani = animation.FuncAnimation(fig=fig, func=update_data , frames=None)
-
     plt.show()
-    exit("Ferdig for fan")
+    exit("lasd")
     Writer = animation.writers['ffmpeg']
     writer = Writer(fps=15, metadata=dict(artist="Me"), bitrate=1800)
     ani.save('traveling_point.mp4', writer=writer)
