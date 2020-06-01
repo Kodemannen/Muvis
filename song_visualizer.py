@@ -42,36 +42,43 @@ def Traveling_point(track, peaks_x, peaks_y, frame_rate):
     k = 10 # Using the k first freqs
 
     freqs = peaks_x[:k] / 1000   # Hz
+    print(freqs)
     amps  = peaks_y[:k]
 
     f = freqs[0]
     w = 2*np.pi*f
     a = amps[0]
-    s = a*np.sin(w*t)
+    s = np.sin(w*t)
+
+    for i in range(n):
 
     fig, ax = plt.subplots()
 
-    x0 = np.zeros(2) # initial position
-    ax.scatter(*x0)
-
-
     # Some numerical integration method:
+    #v0 = np.array([1,0])
+    #v = np.zeros((n,2))
+    #r = np.zeros((n,2))
+    #for i in range(n):
 
-
-
+    lambda_ = 0.99
+    fade = np.ones(n)*0.1
+    with_fade = s.copy()
     def update_data(i):
-        x = t[i]
-        y = s[i]
-        ax.clear()
-        ax.scatter(x,y)
 
-    Writer = animation.writers['ffmpeg']
-    writer = Writer(fps=15, metadata=dict(artist="Me"), bitrate=1800)
+        i = 3000*i
+        ax.clear()
+        ax.set_ylim([-1,1])
+        ax.scatter(t[:i],with_fade[:i],color="black")
+        with_fade[:i]*=
 
 
     ani = animation.FuncAnimation(fig=fig, func=update_data , frames=None)
-    ani.save('traveling_point.mp4', writer=writer)
+
+    plt.show()
     exit("Ferdig for fan")
+    Writer = animation.writers['ffmpeg']
+    writer = Writer(fps=15, metadata=dict(artist="Me"), bitrate=1800)
+    ani.save('traveling_point.mp4', writer=writer)
 
 if __name__ == "__main__":
     #import inspect
