@@ -69,12 +69,15 @@ def Traveling_point(track, peaks_x, peaks_y, frame_rate):
     #for i in range(n):
 
     def update_data(i):
-        i = 50000*i
+        i = 500*i
         ax.clear()
         ax.set_ylim([-1.5,1.5])
 
-        tall = len(s[(i-10):i])
-        ax.scatter(t[(i-10):i],s[(i-10):i],color=rgba_colors[:tall])
+        step = 80
+        reachback = step*n_dots
+
+        tall = len(s[(i-reachback):i:step])
+        ax.scatter(t[(i-reachback):i:step],s[(i-reachback):i:step],color=rgba_colors[:tall])
 
     ani = animation.FuncAnimation(fig=fig, func=update_data , frames=None)
     plt.show()
