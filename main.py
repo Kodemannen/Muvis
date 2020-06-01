@@ -68,6 +68,8 @@ def Traveling_point(track, peaks_x, peaks_y, frame_rate):
     #r = np.zeros((n,2))
     #for i in range(n):
 
+    print("test")
+
     def update_data(i):
         i = 500*i
         ax.clear()
