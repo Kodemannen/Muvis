@@ -58,9 +58,9 @@ def Traveling_point(track, peaks_x, peaks_y, frame_rate):
      # Trailing dots: #
     ##################
     n_dots = 10
-    rgba_colors = np.zeros((10, 4))
-    rgba_colors[:,0] = 1.0
-    alphas = np.linspace(0.1, 1, 10)
+    rgba_colors = np.zeros((n_dots, 4))
+    rgba_colors[:,1] = 1.0
+    alphas = np.linspace(0.1, 1, n_dots)
     rgba_colors[:,3] = alphas # 4th columns are the alphas
 
     # Some numerical integration method:
@@ -71,7 +71,7 @@ def Traveling_point(track, peaks_x, peaks_y, frame_rate):
 
 
     def update_data(i):
-        print(i)
+        print(t/T *100, "%")
         i = int(frame_rate/fps*i) # Makes sure the time is correct
         ax.clear()
         ax.set_ylim([-1.5,1.5])
@@ -81,12 +81,13 @@ def Traveling_point(track, peaks_x, peaks_y, frame_rate):
 
         tall = len(s[(i-reachback):i:step])
         ax.scatter(t[(i-reachback):i:step],s[(i-reachback):i:step],color=rgba_colors[:tall])
-        ax.set_title("t={lok:.2f} s".format(lok=t[i]))
+        ax.set_title("t={lok:.1f} s".format(lok=t[i]))
 
-    ani = animation.FuncAnimation(fig=fig, func=update_data , frames=None)
+    ani = animation.FuncAnimation(fig=fig, func=update_data)
 
     Writer = animation.writers['ffmpeg']
-    writer = Writer(fps=fps, metadata=dict(artist="Me"), bitrate=1800)
+
+    writer = Writer(fps=fps, metadata=dict(artist="Me"), bitrate=800)
     ani.save('traveling_point.mp4', writer=writer)
     exit("eddge")
 
@@ -128,3 +129,5 @@ if __name__ == "__main__":
     plt.semilogx()
     fig.savefig("dev_fig.pdf")
     #plt.show()
+    # cvlc traveling_point.mp4 --input-repeat 1999
+    # vlc traveling_point.mp4 --input-repeat 1999
