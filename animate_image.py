@@ -1,6 +1,8 @@
 import sys
 
 import numpy as np
+
+import scipy
 from scipy.fft import fft, ifft
 import scipy.signal as signal
 
@@ -37,29 +39,26 @@ def read_mp3(f, normalized=False):
 
 
 def animate(original_image, timesteps, fps):
+    """OLD SHIT"""
 
     fig, ax = plt.subplots()
     image = original_image.copy() / 255
+    image_shape = image.shape
 
     dump_path = path + "Million_dollar_anvil/"
     T = timesteps.shape[0]
     f = 10/T
     w = 2*np.pi*f
 
-    image_shape = image.shape
-    Nx = image_shape[0]
-    Ny = image_shape[1]
-    stk = 1000
+    count = 0
 
-    def update_frame(t):
+    def update_frame(t, count):
 
-        print(t/T *100, "%")        # printing progress
-        ax.clear()
-
-        x_indices = np.random.randint(low=0, high=Nx, size=stk)
-        y_indices = np.random.randint(low=0, high=Ny, size=stk)
-
-        image[x_indices,y_indices] = 0
+        count += 1
+        #-------------------------------------------
+        print(t/T *100, "%") # Printing progress and
+        ax.clear()           # clearing canvas
+        #-------------------------------------
 
         # Normalize:
         #image -= image.min()
@@ -71,7 +70,79 @@ def animate(original_image, timesteps, fps):
     Writer = animation.writers['ffmpeg']
     writer = Writer(fps=fps, metadata=dict(artist="Me"), bitrate=800)
 
-    ani = animation.FuncAnimation(fig, update_frame, timesteps)
+    ani = animation.FuncAnimation(fig, update_frame, timesteps, fargs=(count,))
+    ani.save("test.mp4", writer=writer)
+
+    return 0
+
+
+def animate_image():
+
+    filename = "million_dollar_anvil.mp3"
+
+    y, sr = librosa.load(filename)
+    song_duration = (y.shape[0]-1)/sr   # sec
+
+
+    exit("asd")
+
+    # Set the hop length; at 22050 Hz, 512 samples ~= 23ms
+    hop_length = 512
+
+    # Separate harmonics and percussives into two waveforms
+    y_harmonic, y_percussive = librosa.effects.hpss(y)
+
+    tempo, beat_frames = librosa.beat.beat_track(y=y, sr=sr)
+    # beat_frames contain the indices of the frames in y that are the beat hits
+
+    # Compute MFCC features from the raw signal
+    mfcc = librosa.feature.mfcc(y=y, sr=sr, hop_length=hop_length, n_mfcc=13)
+
+    # And the first-order differences (delta features)
+    mfcc_delta = librosa.feature.delta(mfcc)
+
+    # Stack and synchronize between beat events
+    # This time, we'll use the mean value (default) instead of median
+    beat_mfcc_delta = librosa.util.sync(np.vstack([mfcc, mfcc_delta]),
+                                        beat_frames)
+
+    # Compute chroma features from the harmonic signal
+    chromagram = librosa.feature.chroma_cqt(y=y_harmonic,
+                                            sr=sr)
+
+    # Aggregate chroma features between beat events
+    # We'll use the median value of each feature between beat frames
+    beat_chroma = librosa.util.sync(chromagram,
+                                    beat_frames,
+                                    aggregate=np.median)
+
+    # Finally, stack all beat-synchronous features together
+    beat_features = np.vstack([beat_chroma, beat_mfcc_delta])
+    # contains indices of beat frames
+
+
+    # Making animation:
+    original_image = plt.imread("me.jpg") # values between 0 and 255 it seems
+    fig, ax = plt.subplots()
+    image = original_image.copy() / 255
+    black_image = np.zeros_like(image)
+    fps = 24
+
+    timesteps = y
+    dump_path = path + "Million_dollar_anvil/"
+    T = timesteps.shape[0]
+    indices = beat_features[0]
+
+    exit("wt")
+    count = 1
+
+    def update_frame(t):
+        pass
+
+    Writer = animation.writers['ffmpeg']
+    writer = Writer(fps=fps, metadata=dict(artist="Me"), bitrate=800)
+
+    ani = animation.FuncAnimation(fig, update_frame, timesteps, fargs=(count,indices))
     ani.save("test.mp4", writer=writer)
 
     return 0
@@ -81,9 +152,14 @@ def animate(original_image, timesteps, fps):
 #-------------------------------------------------------------------#
 '|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||'
 #-------------------------------------------------------------------#
+def playit():
+
+    # Stack and synchronize between beat events
+    # This time, we'll use the mean value (default) instead of median
+    beat_mfcc_delta = librosa.util.sync(np.vstack([mfcc, mfcc_delta]), beat_frames)
 
 def main():
-
+    """OLD SHIT"""
     song = pydub.AudioSegment.from_mp3("million_dollar_anvil.mp3")
     frame_rate = song.frame_rate
 
@@ -97,47 +173,32 @@ def main():
     mono = mono/1000 # in units of s now
 
     templength = round(len(mono)/25)
+    mono = mono[:templength]
 
     song_duration_sec = (mono.shape[0]-1)/frame_rate
     song_duration_min = song_duration_sec/60
 
     fps = 24
     N_timesteps = round(song_duration_sec * fps)
-    N_timesteps /= 25  # for development
+    N_timesteps = int(N_timesteps)
+
     timesteps = np.arange(N_timesteps)
+
+    tempogram = librosa.feature.tempogram(y=mono)
+    tempogram = np.mean(tempogram, axis=1)
+
+    peak_indices = scipy.signal.find_peaks(tempogram)[0]
+
+    plt.plot(tempogram)
+    plt.scatter(peak_indices, tempogram[peak_indices])
+    #plt.plot(peaks)
+    plt.savefig("develop_fig.jpg")
 
     img = plt.imread("me.jpg") # values between 0 and 255 it seems
 
     anim = animate(img, timesteps, fps)
 
 
-    #plt.plot(timesteps,mono)
-    #plt.savefig("tester.jpg")
-
-    exit("hore")
-
-    # importing image:
-
-
-
-
-    #img = (img > 255/3) * img
-
-    #plt.imsave("tester.jpg", img)
-
-
-
-    #-------------------------------------------
-    # Analysis:
-
-    # 1. Finding the important frequencies:
-
-    #librosa.display.specshow()
-    #tempogram = librosa.feature.tempogram(mono)
-    #print(tempogram)
-
-    #print(tempogram.shape)
-
 
 if __name__=="__main__":
-    main()
+    animate_image()
