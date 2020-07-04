@@ -84,22 +84,28 @@ def animate_image():
     song_duration = (y.shape[0]-1)/sr   # sec
 
 
-    exit("asd")
 
     # Set the hop length; at 22050 Hz, 512 samples ~= 23ms
     hop_length = 512
 
-    # Separate harmonics and percussives into two waveforms
+
+    # separating percussion and tones
     y_harmonic, y_percussive = librosa.effects.hpss(y)
 
     tempo, beat_frames = librosa.beat.beat_track(y=y, sr=sr)
     # beat_frames contain the indices of the frames in y that are the beat hits
 
+
     # Compute MFCC features from the raw signal
     mfcc = librosa.feature.mfcc(y=y, sr=sr, hop_length=hop_length, n_mfcc=13)
+    # returns a matrix with shape (n_mfcc, T) where T is the track duration in frames
+    print(mfcc.shape)
+    exit("sad:")
+
 
     # And the first-order differences (delta features)
     mfcc_delta = librosa.feature.delta(mfcc)
+
 
     # Stack and synchronize between beat events
     # This time, we'll use the mean value (default) instead of median
@@ -119,7 +125,9 @@ def animate_image():
     # Finally, stack all beat-synchronous features together
     beat_features = np.vstack([beat_chroma, beat_mfcc_delta])
     # contains indices of beat frames
+    # shape: (38, 473), meaning (features, event_frames)
 
+    print(beat_features[0,0])
 
     # Making animation:
     original_image = plt.imread("me.jpg") # values between 0 and 255 it seems
