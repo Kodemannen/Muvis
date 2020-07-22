@@ -40,42 +40,15 @@ def read_mp3(f, normalized=False):
         return a.frame_rate, y
 
 
-def animate(original_image, timesteps, fps):
-    """OLD SHIT"""
+#-------------------------------------------------------------------#
+'|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||'
+#-------------------------------------------------------------------#
+def playit():
 
-    fig, ax = plt.subplots()
-    image = original_image.copy() / 255
-    image_shape = image.shape
+    # Stack and synchronize between beat events
+    # This time, we'll use the mean value (default) instead of median
+    beat_mfcc_delta = librosa.util.sync(np.vstack([mfcc, mfcc_delta]), beat_frames)
 
-    dump_path = path + "Million_dollar_anvil/"
-    T = timesteps.shape[0]
-    f = 10/T
-    w = 2*np.pi*f
-
-    count = 0
-
-    def update_frame(t, count):
-
-        count += 1
-        #-------------------------------------------
-        print(t/T *100, "%") # Printing progress and
-        ax.clear()           # clearing canvas
-        #-------------------------------------
-
-        # Normalize:
-        #image -= image.min()
-        #image /= image.max()
-
-        ax.axis("off")
-        ax.imshow(image)
-
-    Writer = animation.writers['ffmpeg']
-    writer = Writer(fps=fps, metadata=dict(artist="Me"), bitrate=800)
-
-    ani = animation.FuncAnimation(fig, update_frame, timesteps, fargs=(count,))
-    ani.save("test.mp4", writer=writer)
-
-    return 0
 
 
 def animate_image():
@@ -85,8 +58,8 @@ def animate_image():
     y, sr = librosa.load(filename)      # y is a numpy array, sr = sample rate
 
     # cutting for developing:
-    cut = int(y.shape[0]/10)
-    y = y[:cut]
+    #cut = int(y.shape[0]/10)
+    #y = y[:cut]
 
     song_duration = (y.shape[0]-1)/sr   # sec
 
@@ -98,43 +71,12 @@ def animate_image():
     # separating percussion and tones
     y_harmonic, y_percussive = librosa.effects.hpss(y)
 
-    tempo, beat_frames = librosa.beat.beat_track(y=y, sr=sr)
+    tempo, beat_frames = librosa.beat.beat_track(y=y_percussive, sr=sr)
     # beat_frames contain the indices of the frames in y that are the beat hits
 
+    beat_times = librosa.frames_to_time(beat_frames, sr=sr)
+    # beat times are now beat events in seconds
 
-    # Compute MFCC features from the raw signal
-    mfcc = librosa.feature.mfcc(y=y, sr=sr, hop_length=hop_length, n_mfcc=13)
-    # returns a matrix with shape (n_mfcc, T) where T is the track duration in frames
-    print(mfcc.shape)
-
-
-    # And the first-order differences (delta features)
-    mfcc_delta = librosa.feature.delta(mfcc)
-
-
-    # Stack and synchronize between beat events
-    # This time, we'll use the mean value (default) instead of median
-    beat_mfcc_delta = librosa.util.sync(np.vstack([mfcc, mfcc_delta]),
-                                        beat_frames)
-
-    # Compute chroma features from the harmonic signal
-    chromagram = librosa.feature.chroma_cqt(y=y_harmonic,
-                                            sr=sr)
-
-    # Aggregate chroma features between beat events
-    # We'll use the median value of each feature between beat frames
-    beat_chroma = librosa.util.sync(chromagram,
-                                    beat_frames,
-                                    aggregate=np.median)
-
-    # Finally, stack all beat-synchronous features together
-    beat_features = np.vstack([beat_chroma, beat_mfcc_delta])
-    # contains indices of beat frames
-    # shape: (38, 473), meaning (features, event_frames)
-
-    print(beat_features.shape) 
-    
-    print(beat_features[0,0])
 
     # Making animation:
     original_image = plt.imread("me.jpg") # values between 0 and 255 it seems
@@ -143,86 +85,85 @@ def animate_image():
     black_image = np.zeros_like(image)
     fps = 24
 
-    timesteps = np.arange(y.shape[0])
-    timesteps = np.arange(100)
-    dump_path = path + "Million_dollar_anvil/"
-    T = timesteps.shape[0]
-    indices = beat_features[0]
+    #timesteps = np.arange(y.shape[0])
+    timesteps_grid = np.arange(0, song_duration, step=1/fps)
+    print(timesteps_grid.shape)
 
+    def check_if_on_grid(val, grid, tol):
+
+        cond = abs(grid - val) < tol 
+        cond2 = abs(val - grid) < tol
+        return cond*cond2
+
+
+    tol = 2e-2
+
+    beat_times_gridded = np.zeros_like(timesteps_grid)
+    n = beat_times.shape[0]
+    for i in range(n):
+       
+        val = beat_times[i]
+        truth = check_if_on_grid(val, timesteps_grid, tol=tol)
+        beat_times_gridded += truth
+
+
+    dump_path = path + "Million_dollar_anvil/"
+    #T = timesteps.shape[0]
+    timesteps = np.arange(timesteps_grid.shape[0])
 
     duration = 10       # duration of black img
     count = 0
+    fig.savefig('hmmm.png')
 
-    def update_frame(t, count, indices):
+    def update_frame(i):
+        
+        ax.clear()
+        if beat_times_gridded[i] == 0:
+            ax.imshow(original_image)
+        else:
+            ax.imshow(black_image)
 
-        ax.imshow(original_image)
-
-
+        ax.set_axis_off()
         return 0
 
-        
+    import time    
+    t0 = time.time()
 
     Writer = animation.writers['ffmpeg']
     writer = Writer(fps=fps, metadata=dict(artist="Me"), bitrate=800)
 
-    ani = animation.FuncAnimation(fig, update_frame, timesteps, fargs=(count,indices))
-    ani.save("test.mp4", writer=writer)
+    ani = animation.FuncAnimation(fig, update_frame, timesteps)   #, fargs=(count,indices))
+    ani.save("exports/million_dollar_anvil.mp4", writer=writer)
 
+    t1 = time.time() - t0
+    print('time spent ', t1, ' s')
+    print('time spent ', t1/60, ' min')
     return 0
 
 
+def combine_with_sound():
 
-#-------------------------------------------------------------------#
-'|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||'
-#-------------------------------------------------------------------#
-def playit():
+    import moviepy.editor as mpe
+    movieclip = mpe.VideoFileClip('exports/million_dollar_anvil.mp4')
+    soundtrack = mpe.AudioFileClip('million_dollar_anvil.mp3')
 
-    # Stack and synchronize between beat events
-    # This time, we'll use the mean value (default) instead of median
-    beat_mfcc_delta = librosa.util.sync(np.vstack([mfcc, mfcc_delta]), beat_frames)
+    #final_audio = mpe.CompositeAudioClip([soundtrack])
+    final_clip = movieclip.set_audio(soundtrack)
 
-def main():
-    """OLD SHIT"""
-    song = pydub.AudioSegment.from_mp3("million_dollar_anvil.mp3")
-    frame_rate = song.frame_rate
-
-    #pydub.playback.play(song)
-
-    song_array = np.array(song.get_array_of_samples())
-    song_array = song_array.reshape((-1, 2))
-    song_array = song_array / 2**15               # Normalize
-
-    mono = song_array[:,0]
-    mono = mono/1000 # in units of s now
-
-    templength = round(len(mono)/25)
-    mono = mono[:templength]
-
-    song_duration_sec = (mono.shape[0]-1)/frame_rate
-    song_duration_min = song_duration_sec/60
-
-    fps = 24
-    N_timesteps = round(song_duration_sec * fps)
-    N_timesteps = int(N_timesteps)
-
-    timesteps = np.arange(N_timesteps)
-
-    tempogram = librosa.feature.tempogram(y=mono)
-    tempogram = np.mean(tempogram, axis=1)
+    final_clip.write_videofile('exports/test2.mp4', fps=24, codec='mpeg4')
 
 
-    peak_indices = scipy.signal.find_peaks(tempogram)[0]
-
-    plt.plot(tempogram)
-    plt.scatter(peak_indices, tempogram[peak_indices])
-    #plt.plot(peaks)
-    plt.savefig("develop_fig.jpg")
-
-    img = plt.imread("me.jpg") # values between 0 and 255 it seems
-
-    anim = animate(img, timesteps, fps)
-
+    
+def mhmovie():
+    #from mhmovie.code import movie, music
+    #m = movie("exports/million_dollar_anvil.mp4")
+    #mu = music('million_dollar_anvil.mp3')
+    #final = m+mu
+    #final.save("test2.mp4")
+    pass
 
 
 if __name__=="__main__":
     animate_image()
+    combine_with_sound()
+    print('doneit')
