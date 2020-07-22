@@ -2,23 +2,25 @@ import sys
 
 import numpy as np
 
-import scipy
-from scipy.fft import fft, ifft
-import scipy.signal as signal
+#import scipy
+#from scipy.fft import fft, ifft
+#import scipy.signal as signal
 
 import matplotlib.pyplot as plt
 from matplotlib import animation
-import seaborn as sns
-sns.set()
+import matplotlib
+matplotlib.use('agg')
+#import seaborn as sns
+#sns.set()
 
-import pydub
-import pydub.playback
+#import pydub
+#import pydub.playback
 
 import librosa
 
-import moviepy.editor as mpe
+#import moviepy.editor as mpe
 
-from moviepy.video.tools.drawing import color_split
+#from moviepy.video.tools.drawing import color_split
 
 # Importer coverbilde
 # fuck med et filter som varierer med frekvensene i laata
@@ -80,9 +82,13 @@ def animate_image():
 
     filename = "million_dollar_anvil.mp3"
 
-    y, sr = librosa.load(filename)
-    song_duration = (y.shape[0]-1)/sr   # sec
+    y, sr = librosa.load(filename)      # y is a numpy array, sr = sample rate
 
+    # cutting for developing:
+    cut = int(y.shape[0]/10)
+    y = y[:cut]
+
+    song_duration = (y.shape[0]-1)/sr   # sec
 
 
     # Set the hop length; at 22050 Hz, 512 samples ~= 23ms
@@ -100,7 +106,6 @@ def animate_image():
     mfcc = librosa.feature.mfcc(y=y, sr=sr, hop_length=hop_length, n_mfcc=13)
     # returns a matrix with shape (n_mfcc, T) where T is the track duration in frames
     print(mfcc.shape)
-    exit("sad:")
 
 
     # And the first-order differences (delta features)
@@ -127,6 +132,8 @@ def animate_image():
     # contains indices of beat frames
     # shape: (38, 473), meaning (features, event_frames)
 
+    print(beat_features.shape) 
+    
     print(beat_features[0,0])
 
     # Making animation:
@@ -136,16 +143,24 @@ def animate_image():
     black_image = np.zeros_like(image)
     fps = 24
 
-    timesteps = y
+    timesteps = np.arange(y.shape[0])
+    timesteps = np.arange(100)
     dump_path = path + "Million_dollar_anvil/"
     T = timesteps.shape[0]
     indices = beat_features[0]
 
-    exit("wt")
-    count = 1
 
-    def update_frame(t):
-        pass
+    duration = 10       # duration of black img
+    count = 0
+
+    def update_frame(t, count, indices):
+
+        ax.imshow(original_image)
+
+
+        return 0
+
+        
 
     Writer = animation.writers['ffmpeg']
     writer = Writer(fps=fps, metadata=dict(artist="Me"), bitrate=800)
@@ -194,6 +209,7 @@ def main():
 
     tempogram = librosa.feature.tempogram(y=mono)
     tempogram = np.mean(tempogram, axis=1)
+
 
     peak_indices = scipy.signal.find_peaks(tempogram)[0]
 

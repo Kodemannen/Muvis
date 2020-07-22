@@ -91,6 +91,17 @@ def Traveling_point(track, peaks_x, peaks_y, frame_rate):
     ani.save('traveling_point.mp4', writer=writer)
     exit("eddge")
 
+
+def get_freqs(track)
+
+
+def main():
+    filename = 'million_dollar_anvil.mp3'
+
+
+
+
+
 if __name__ == "__main__":
     #import inspect
     # track = read('perc_prosjekt.mp3')
