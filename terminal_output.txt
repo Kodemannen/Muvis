@@ -1,0 +1,11 @@
+(482,)
+time spent  249.609037399292  s
+time spent  4.160150623321533  min
+Moviepy - Building video exports/cut_anim_sound.mp4.
+MoviePy - Writing audio in cut_anim_soundTEMP_MPY_wvf_snd.mp3
+MoviePy - Done.
+Moviepy - Writing video exports/cut_anim_sound.mp4
+
+Moviepy - Done !
+Moviepy - video ready exports/cut_anim_sound.mp4
+doneit
